@@ -12,4 +12,6 @@ const localStorageMock = {
 };
 global.localStorage = localStorageMock;
 
+// Using TypeScript with Babel, all files need to have at least one
+// export, otherwise the transpilation will throw an error
 export default undefined;

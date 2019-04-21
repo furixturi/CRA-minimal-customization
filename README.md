@@ -1,44 +1,282 @@
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+This project is built upon the [Create React App](https://facebook.github.io/create-react-app/) with
+customizations to enable scalability.
 
-## Available Scripts
+# 1. Use TypeScript
 
-In the project directory, you can run:
+## TypeScript flag
 
-### `npm start`
+```bash
+yarn create react-app react-minimal-boilerplate --typescript
+```
 
-Runs the app in the development mode.<br>
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+## Lint
 
-The page will reload if you make edits.<br>
-You will also see any lint errors in the console.
+### Install VSCode TSLint extension
 
-### `npm test`
+[VSCode TSLint extension by Microsoft](https://marketplace.visualstudio.com/items?itemName=ms-vscode.vscode-typescript-tslint-plugin)
 
-Launches the test runner in the interactive watch mode.<br>
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### Add It to Project
 
-### `npm run build`
+In CRA's `tsconfig.json`
 
-Builds the app for production to the `build` folder.<br>
-It correctly bundles React in production mode and optimizes the build for the best performance.
+```json
+{
+  ...,
 
-The build is minified and the filenames include the hashes.<br>
-Your app is ready to be deployed!
+  "plugins": [
+      {
+        "name": "typescript-tslint-plugin"
+      }
+    ],
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+  ...
+}
+```
 
-### `npm run eject`
+# 2. Use SASS and CSS modules
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+## SASS support
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+```bash
+yarn add node-sass
+```
 
-Instead, it will copy all the configuration files and the transitive dependencies (Webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+## CSS modules
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+### Style Files Folder Structure
 
-## Learn More
+```bash
+src
+  |- styles-global
+  |   |- global.scss
+  |     ...
+  |- modules
+      |- App
+          |- App.module.scss
+      ...
+```
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+### Using modular CSS
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+#### 1. Import Styling Rules
+Import the styles from the SASS file as `styles` in the components' tsx file:
+
+```js
+// .../App/index.tsx
+
+import styles from './App.module.scss';
+```
+
+#### 2. Use Imported Styles
+
+The CSS classes defined in the imported style sheet are accssible as properties of the styles object
+
+```tsx
+// .../App/index.tsx
+
+import React, { Component } from 'react';
+import logo from '../../assets/logo.svg';
+import styles from './App.module.scss';
+
+class App extends Component {
+  render() {
+    return (
+      <div className={styles.App}>
+        <header className={styles.AppHeader}>
+...
+```
+
+As a result, the CSS classes in the final markup are prefixed with the
+enclosing folder name together with a short hash string, which avoids
+any CSS class name conflicts.
+
+Inspect the markup in Chrome DevTool:
+```html
+<div class="App_App__yuWLK">
+  <header class="App_AppHeader__KpczK">
+  ...
+  </header>
+</div>
+```
+
+# 3. Restructure for Scaling
+
+## Assets Folder
+
+Organize media assets into an `assets` folder.
+
+```bash
+src
+  |- assets
+  |   |- logo.svg
+  |   ...
+  ...
+```
+
+When using them, improt them as a JS module.
+
+```js
+// .../App/index.tsx
+
+import logo from '../../assets/logo.svg';
+...
+
+class App extends Component {
+  render() {
+    return (
+      ...
+      <img
+          src={logo}
+          className={styles.AppLogo}
+          alt="logo"
+        />
+...
+``` 
+
+## Modularization
+Each component's implementation, styling, and testing files are grouped
+under its own folder under `modules` , including the `App` component.
+Only `index.tsx` is kept directly under the `src` folder.
+
+```bash
+src
+  |- modules
+  |   |- Common
+  |   |   |- ...
+  |   |
+  |   |- App
+  |   |   |- index.tsx
+  |   |   |- App.module.scss
+  |   |   |- App.test.tsx
+  |   |
+  |   |- AnotherComponent
+  |   |   |- index.tsx
+  |   |   |- AnotherComponentpp.module.scss
+  |   |   |- AnotherComponent.test.tsx
+  |   |
+  |   ...
+  |
+  |- index.tsx
+  ...
+```
+
+When using Redux and Saga, the structure can be further modularized
+
+```bash
+src
+  |- modules
+  |   |- ModuleA
+  |   |   |- Components
+  |   |   |   |- ModuleASpecificComponentA
+  |   |   |   |   |- index.tsx
+  |   |   |   |   |- ModuleASpecificComponent.scss
+  |   |   |   |   |- ModuleASpecificComponent.test.tsx
+  |   |   |   |
+  |   |   |   ...
+  |   |   |
+  |   |   |- index.tsx (exports ModuleA, reducers, sagas)
+  |   |   |- ModuleA.test.tsx
+  |   |   |- ModuleA.module.scss
+  |   |   |- redux-saga
+  |   |       |- actions.ts
+  |   |       |- reducers.ts
+  |   |       |- sagas.ts
+  |   |       |- sagas.test.ts
+  |   |
+  |   ...
+  |
+  |- index.tsx (inits redux, saga as well as renders App)
+  |- rootReducer.ts (imports and combines module reducers)
+  |- rootSaga.ts (imports and yield all module sagas)
+  ...
+```
+
+# 4. Enhance Test
+
+## Add enzyme
+
+To test React components, add `enzyme`, its react adapter, and type definitions.
+
+```bash
+yarn add enzyme @types/enzyme react-test-renderer
+```
+
+```bash
+yarn add enzyme-adapter-react-16 @types/enzyme-adapter-react-16
+```
+
+Add `jest-enzyme` to use readable matchers.
+
+```bash
+yarn add jest-enzyme
+```
+
+## Setup Test
+
+Add a `setupTest.js` file directly under the `src`
+
+```bash
+src
+  |- ...
+  |- setupTest.js
+  ...
+```
+
+Add the `enzyme` setup in it.
+
+```js
+// src/setupTest.js
+import { configure } from 'enzyme';
+import Adapter from 'enzyme-adapter-react-16';
+import 'jest-enzyme';
+
+configure({ adapter: new Adapter() });
+
+// Using TypeScript with Babel, all files need to have at least one export,
+// otherwise the transpilation will throw an error
+export default undefined;
+```
+
+Any global mock for tests can also go into the `setupTest.js` 
+
+```js
+// src/setupTest.js
+...
+
+const localStorageMock = {
+  getItem: jest.fn(),
+  setItem: jest.fn(),
+  removeItem: jest.fn(),
+  clear: jest.fn(),
+};
+global.localStorage = localStorageMock;
+
+...
+```
+
+## Test React Components
+
+An example to test the App component with `enzyme`'s shallow rendering
+and `jest-enzyme`'s readable matcher `toContainReact`
+
+```tsx
+// App/App.test.tsx
+import { shallow } from 'enzyme';
+import React from 'react';
+import App from '.';
+
+describe('App', () => {
+  it('renders without crashing', () => {
+    shallow(<App />);
+  });
+
+  it('contains a welcome message', () => {
+    const wrapper = shallow(<App />);
+    const welcome = <h2>Welcome to React</h2>;
+    expect(wrapper).toContainReact(welcome);
+  });
+
+});
+
+```
+
